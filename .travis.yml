@@ -1,0 +1,38 @@
+sudo: required
+
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - echo "start creating FullStack images using dockerfile"
+  - docker build -t hjcho93/react-test-app -f ./frontend/Dockerfile.dev ./frontend
+
+script:
+  - docker run -e CI=true hjcho93/react-test-app npm run test
+
+after_success:
+ - docker build -t hjcho93/docker-frontend ./frontend
+ - docker build -t hjcho93/docker-backend  ./backend
+ - docker build -t hjcho93/docker-nginx    ./nginx
+
+ - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_ID" --password-stdin
+ 
+ - docker push -t hjcho93/docker-frontend
+ - docker push -t hjcho93/docker-backend
+ - docker push -t hjcho93/docker-nginx
+
+# deploy:
+#   provider: elasticbeanstalk
+#   region: "ap-northeast-2"  #aws서울서버
+#   app: "eb-docker-app"  #app 이름
+#   env: "Eb-docker-app-env"  #환경이름
+#   bucket_name: "elasticbeanstalk-ap-northeast-2-096561175981" #s3 스토리지 관련
+#   bucket_path: "eb-docker-app"  #app 이름과 똑같이 넣어주면됨
+#   on:
+#     branch: master  #master 브랜치에 소스코드가 변경될때만 eb 배포
+    
+#   access_key_id: $AWS_ACCESS_KEY
+#   secret_access_key: $AWS_SECRET_ACCESS_KEY
+  
